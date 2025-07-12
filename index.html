@@ -18,7 +18,10 @@
         </select>
     </div>
     <button onclick="startGame()">게임 시작</button>
-    <div style="margin-top:10px; color:#555; font-size:1em;">60초 안에 60번 스페이스바를 눌러야 승리합니다.<br>STOP 상태에서 누르면 즉시 패배!</div>
+    <div id="clickArea" style="margin:20px 0; padding:30px; border:2px dashed #888; border-radius:10px; background:#f9f9f9; cursor:pointer; font-size:1.2em; user-select:none;">
+        여기를 마우스로 좌/우 클릭하세요!
+    </div>
+    <div style="margin-top:10px; color:#555; font-size:1em;">60초 안에 60번 클릭(좌/우)해야 승리합니다.<br>STOP 상태에서 클릭하면 즉시 패배!</div>
     <script>
     // 게임 상태
     const MOVE = 'MOVE';
@@ -55,18 +58,19 @@
         const nextTime = getRandomStateTime();
         stateTimeoutId = setTimeout(switchState, nextTime * 1000);
     }
-    function onSpacebar(e) {
+    function onClickArea(e) {
         if (isGameOver) return;
-        if (e.code !== 'Space') return;
-        if (gameState === MOVE) {
-            score++;
-            setScore(score);
-            if (score >= WIN_SCORE) {
-                endGame(true);
+        // 좌/우 클릭만 허용 (e.button: 0=좌, 2=우)
+        if (e.type === 'mousedown' && (e.button === 0 || e.button === 2)) {
+            if (gameState === MOVE) {
+                score++;
+                setScore(score);
+                if (score >= WIN_SCORE) {
+                    endGame(true);
+                }
+            } else {
+                endGame(false);
             }
-        } else {
-            // STOP 상태에서 스페이스바 누름: 패배
-            endGame(false);
         }
     }
     function tick() {
@@ -88,7 +92,11 @@
         clearTimeout(timerId);
         clearTimeout(stateTimeoutId);
         setMessage(isWin ? '🎉 승리!' : '💥 패배!');
-        document.removeEventListener('keydown', onSpacebar);
+        document.getElementById('clickArea').removeEventListener('mousedown', onClickArea);
+        document.getElementById('clickArea').removeEventListener('contextmenu', preventContextMenu);
+    }
+    function preventContextMenu(e) {
+        e.preventDefault();
     }
     function startGame() {
         // 초기화
@@ -102,7 +110,10 @@
         setStatus(gameState);
         clearTimeout(timerId);
         clearTimeout(stateTimeoutId);
-        document.addEventListener('keydown', onSpacebar);
+        // 클릭 이벤트 등록
+        const area = document.getElementById('clickArea');
+        area.addEventListener('mousedown', onClickArea);
+        area.addEventListener('contextmenu', preventContextMenu);
         // 상태 전환 예약
         const nextTime = getRandomStateTime();
         stateTimeoutId = setTimeout(switchState, nextTime * 1000);
@@ -114,6 +125,11 @@
     setScore(0);
     setTimer(60);
     setMessage('');
+    // 클릭 영역 우클릭 방지
+    document.addEventListener('DOMContentLoaded', function() {
+        const area = document.getElementById('clickArea');
+        if (area) area.addEventListener('contextmenu', preventContextMenu);
+    });
     </script>
 </body>
 </html>
